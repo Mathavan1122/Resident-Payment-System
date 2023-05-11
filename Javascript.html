@@ -1,0 +1,703 @@
+<script>
+
+//--------Login Page----------------------------------
+
+function LoginUser()
+    {
+    var loginUsername = document.getElementById("loginUsername").value;
+    var loginPassword = document.getElementById("loginPassword").value;
+    
+    google.script.run.withSuccessHandler(function(output) 
+    {
+      if(output == 'ADMIN_TRUE')
+      {
+        document.getElementById("loginDisplay").style.display = "none";
+        document.getElementById("adminDisplay").style.display = "block"; 
+        document.getElementById("clerkDisplay").style.display = "none";  
+        document.getElementById("paymentDisplay").style.display = "block";
+        document.getElementById("errorMessage").style.display = "none"; 
+
+      }
+      if(output == 'CLERK_TRUE')
+      {
+        document.getElementById("loginDisplay").style.display = "none";
+        document.getElementById("adminDisplay").style.display = "none";  
+        document.getElementById("clerkDisplay").style.display = "block";   
+        document.getElementById("paymentDisplay").style.display = "block";
+       document.getElementById("errorMessage").style.display = "none"; 
+
+      }
+      else if(output == 'FALSE')
+      {
+        document.getElementById("errorMessage").innerHTML = "Failed to Login";     
+      }    
+    }).checkLogin(loginUsername, loginPassword);
+    }
+    
+//-------Log Out----------------------   
+    function LogOut(){  
+        document.getElementById("loginDisplay").style.display = "block";
+        document.getElementById("adminDisplay").style.display = "none"; 
+        document.getElementById("clerkDisplay").style.display = "none";  
+        document.getElementById("paymentDisplay").style.display = "none";
+        document.getElementById("resDetailsDisplay").style.display = "none";
+        document.getElementById("clerkDetailsDisplay").style.display = "none";   
+        document.getElementById("changeAdminPw").style.display = "none";    
+        document.getElementById("changeClerkPw").style.display = "none";
+        document.getElementById("resPaymentRec").style.display = "none";  
+        document.getElementById("changeClerkPwSuccess").style.display = "none";
+        document.getElementById("changeClerkPwFail").style.display = "none";
+        document.getElementById("changeAdminPwSuccess").style.display = "none";
+        document.getElementById("changeAdminPwFail").style.display = "none";
+        document.getElementById("loginUsername").value = "";
+        document.getElementById("loginPassword").value = "";
+        document.getElementById("pm_uname").value = "";
+//      google.script.run
+//      .withSuccessHandler(function(url){window.open(url,"_top");})
+//      .getScriptURL();
+    }
+    
+        
+    
+function managePayment() {
+  document.getElementById("paymentDisplay").style.display = "block";
+  document.getElementById("resDetailsDisplay").style.display = "none";
+  document.getElementById("clerkDetailsDisplay").style.display = "none";   
+  document.getElementById("changeAdminPw").style.display = "none";    
+  document.getElementById("changeClerkPw").style.display = "none"; 
+}    
+
+function openResident() {
+  document.getElementById("paymentDisplay").style.display = "none";
+  document.getElementById("resDetailsDisplay").style.display = "block";
+  document.getElementById("clerkDetailsDisplay").style.display = "none";    
+  document.getElementById("changeAdminPw").style.display = "none";    
+  document.getElementById("changeClerkPw").style.display = "none";    
+}
+
+function openClerk() {
+  document.getElementById("paymentDisplay").style.display = "none";
+  document.getElementById("resDetailsDisplay").style.display = "none";
+  document.getElementById("clerkDetailsDisplay").style.display = "block";     
+  document.getElementById("changeAdminPw").style.display = "none";    
+  document.getElementById("changeClerkPw").style.display = "none";    
+}
+
+function changeAdminPw() {
+  document.getElementById("paymentDisplay").style.display = "none";
+  document.getElementById("resDetailsDisplay").style.display = "none";
+  document.getElementById("clerkDetailsDisplay").style.display = "none";     
+  document.getElementById("changeAdminPw").style.display = "block";    
+  document.getElementById("changeClerkPw").style.display = "none";    
+}
+
+function changeClerkPw() {
+  document.getElementById("paymentDisplay").style.display = "none";
+  document.getElementById("resDetailsDisplay").style.display = "none";
+  document.getElementById("clerkDetailsDisplay").style.display = "none";     
+  document.getElementById("changeAdminPw").style.display = "none";    
+  document.getElementById("changeClerkPw").style.display = "block";    
+}
+
+//----------------------------------------------------------
+//--------- Manage Payment ---------------------------------------
+    
+    //var pm_uname = ""; // Added
+    function GetRecords() {
+//    var spin = "<span class=\"spinner-border spinner-border-sm\" role=\"status\" aria-hidden=\"true\"></span>";
+//    spin += " Loading...";
+//    document.getElementById("searchButton").innerHTML = spin;
+
+    var pm_uname = document.getElementById("pm_uname").value; // Modified
+    var pm_hseno = document.getElementById("pm_hseno").value;
+    var streetName=document.getElementById("streetName").value;
+//    var password = document.getElementById("password").value;
+//    var password = document.getElementById("password").value;
+      
+      google.script.run.withSuccessHandler(function(output) {
+        console.log(output);
+        var pm_uname = output[1];
+        var name = output[2];
+        var streetName = output[3];
+        var pm_hseno = output[4]
+        
+        if(output[0] == 'TRUE') {
+          document.getElementById("loginDisplay").style.display = "none";
+          document.getElementById("resPaymentRec").style.display = "block";  
+          document.getElementById("paymentAmt").style.display = "block";
+          document.getElementById("errorMessage").innerHTML = "";
+          document.getElementById("currentUser").value = name; // CHANGE
+          document.getElementById("streetName").value = streetName;
+          document.getElementById("pm_hseno").value = pm_hseno;
+          document.getElementById("paymentSuccess").style.display = "none"
+          google.script.run.withSuccessHandler(displayTable).GetRecords(pm_uname,"None");
+
+        } else if(output[0] == 'FALSE') {
+          document.getElementById("firstLastName").innerHTML = "";
+          document.getElementById("currentUser").value = "";
+          document.getElementById("myFilter").innerHTML = "";
+          document.getElementById("streetName").value = "";
+          document.getElementById("pm_hseno").value = "";
+          document.getElementById("errorMessage").innerHTML = "Failed to Login";
+          document.getElementById("paymentSuccess").style.display = "none"
+          document.getElementById("LoginButton").innerHTML = "Login";   
+        }
+      }).checkPaymentUsername(pm_uname);
+    }
+    
+    function filter(){
+     var pm_uname = document.getElementById("pm_uname").value;
+     var filterStr = document.getElementById("filterYear").value;
+     google.script.run.withSuccessHandler(displayTable).GetRecords(pm_uname, filterStr);
+    }
+
+    function displayTable(result) {
+    var ar = result.data;
+    var filterString = result.filter;
+    ar = ar.sort((a, b) => new Date(a).getTime() > new Date(b).getTime() ? -1 : 1).splice(-12); // <--- Added
+    var name = document.getElementById("currentUser").value;  // CHANGE
+      if(ar.length > 0) {
+        var displayTable = '<table class=\"table\" id=\"mainTable\">';
+
+        displayTable += "<tr>";
+        displayTable += '<th style=\"text-align: center;\">Month</th>';
+        displayTable += '<th style=\"text-align: center;\">House Number</th>';
+        displayTable += '<th style=\"text-align: center;\">Street</th>';
+        displayTable += '<th style=\"text-align: center;\">Payment Status</th>';
+        displayTable += "</tr>";
+
+        ar.forEach(function(item, index) {
+          displayTable += "<tr>";
+          displayTable += "<td style=\"text-align: center;\">"+item[0]+"</td>";
+          displayTable += "<td style=\"text-align: center;\">"+item[1]+"</td>";
+          displayTable += "<td style=\"text-align: center;\">"+item[2]+"</td>";
+          displayTable += "<td style=\"text-align: center;\">"+item[3]+"</td>";
+          displayTable += "</tr>";
+        });
+
+        displayTable += "</table>";
+
+      } else {
+        var displayTable = "<span style=\"font-weight: bold\" >No Records Found</span>";
+      }
+      
+       var filter = '';
+      if(filterString.length > 0) {
+        filter += '<label for="years" style="font-size: 20px">Select the Year</label><br><select class="custom-select" id="filterYear" name="years" required><option value="" selected>Choose...</option>';
+        
+        filterString.filter(String).forEach(str => {
+          filter += '<option value="'+str+'">'+str+'</option>';
+        });
+
+        filter += '</select><button class="btn btn-primary" type="button" id="FilterButton" onclick="filter()" >Submit</button>';
+      }
+      
+      var today = new Date();
+      var year = today.getFullYear();
+      var month = today.getMonth();
+      if (!ar.some(([a,,,d]) => {
+        var t = new Date(a);
+        return year == t.getFullYear() && month == t.getMonth() && d.toUpperCase() == "PAID";
+        })) 
+      document.getElementById("displayRecords").innerHTML = displayTable;
+      document.getElementById("firstLastName").innerHTML = "USER: " + name;
+      document.getElementById("myFilter").innerHTML = filter;
+      document.getElementById("searchButton").innerHTML = "Search";
+      document.getElementById("pm_hseno").value;
+      document.getElementById("streetName").value;
+      //document.getElementById("pm_uname").value = '';
+      //document.getElementById("password").value = '';
+    }
+    
+    function enterAmount(){
+      var inputInfo={};
+      inputInfo.amount = document.getElementById("amount").value;
+      inputInfo.uname = document.getElementById("pm_uname").value;
+      //inputInfo.pm_hseno = document.getElementById("pm_hseno").value;
+      //inputInfo.streetName = document.getElementById("streetName").value;
+      
+      if (inputInfo.amount % 50 == 0 && inputInfo.amount != 0){
+        google.script.run.enterAmount(inputInfo); //run server-side
+        document.getElementById("amount").value = ""; 
+        document.getElementById("paymentSuccess").style.display = "block"; 
+        document.getElementById("paymentFail").style.display = "none";
+      }else{
+        document.getElementById("paymentSuccess").style.display = "none"; 
+        document.getElementById("paymentFail").style.display = "block";
+      }
+      /*
+      var result = confirm("Want to Enter amount?");
+      if (result) {
+         google.script.run.enterAmount(inputInfo); //run server-side
+         document.getElementById("amount").value = ""; 
+      }
+      */
+      
+     
+    }
+  
+//----------------------------------------------------------------
+//--------- CHANGE PASSWORD (ADMIN) ---------------------------------------      
+    
+    function changeAdminPassword(){
+    var loginUsername = document.getElementById("loginUsername").value;
+    var loginPassword = document.getElementById("loginPassword").value;
+    var currentAdminPw = document.getElementById("currentAdminPw").value;
+    var newAdminPw = document.getElementById("newAdminPw").value;
+    var confirmAdminPw = document.getElementById("confirmAdminPw").value;
+    
+    if (loginPassword == currentAdminPw && newAdminPw == confirmAdminPw){
+    
+      google.script.run.withSuccessHandler().changeAdminPassword(loginUsername, newAdminPw);
+      document.getElementById("loginPassword").value = newAdminPw;
+      document.getElementById("changeAdminPwSuccess").style.display = "block";
+      document.getElementById("changeAdminPwFail").style.display = "none";
+      document.getElementById("currentAdminPw").value = "";
+      document.getElementById("newAdminPw").value = "";
+      document.getElementById("confirmAdminPw").value = "";
+      
+    }else{
+    
+      document.getElementById("changeAdminPwSuccess").style.display = "none";
+      document.getElementById("changeAdminPwFail").style.display = "block";
+      
+    }
+    }
+
+//----------------------------------------------------------------
+//--------- CHANGE PASSWORD (CLERK) ---------------------------------------      
+    
+    function changeClerkPassword(){
+    var loginUsername = document.getElementById("loginUsername").value;
+    var loginPassword = document.getElementById("loginPassword").value;
+    var currentClerkPw = document.getElementById("currentClerkPw").value;
+    var newClerkPw = document.getElementById("newClerkPw").value;
+    var confirmClerkPw = document.getElementById("confirmClerkPw").value;
+    
+    if (loginPassword == currentClerkPw && newClerkPw == confirmClerkPw){
+      
+        google.script.run.withSuccessHandler().changeClerkPassword(loginUsername, newClerkPw);
+        document.getElementById("changeClerkPwSuccess").style.display = "block";
+        document.getElementById("changeClerkPwFail").style.display = "none";
+        document.getElementById("loginPassword").value = newClerkPw;
+        document.getElementById("currentClerkPw").value = "";
+        document.getElementById("newClerkPw").value = "";
+        document.getElementById("confirmClerkPw").value = "";
+
+        
+     }else{
+     
+        document.getElementById("changeClerkPwSuccess").style.display = "none";
+        document.getElementById("changeClerkPwFail").style.display = "block";
+        
+      }
+    }
+    
+//----------------------------------------------------------
+//---------Clerk Part---------------------------------------
+
+  // Prevent forms from submitting.
+  function preventClerkFormSubmit() {
+    var forms = document.querySelectorAll('form');
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].addEventListener('submit', function(event) {
+      event.preventDefault();
+      });
+    }
+  }
+  window.addEventListener("load", clerkfunctionInit, true); 
+  
+  //INITIALIZE FUNCTIONS ONLOAD
+  function clerkfunctionInit(){  
+    preventClerkFormSubmit();
+    getClerkLastTenRows();
+  };      
+  
+  //HANDLE FORM SUBMISSION
+  function handleClerkFormSubmit(formObject) {
+    google.script.run.withSuccessHandler(createClerkTable).processClerkForm(formObject);
+    document.getElementById("clerkForm").reset();
+  }
+  
+  //GET LAST 10 ROWS
+  function getClerkLastTenRows (){
+   google.script.run.withSuccessHandler(createClerkTable).getClerkLastTenRows();
+  }
+  
+  
+  //GET ALL DATA
+  function getClerkAllData(){
+    google.script.run.withSuccessHandler(createClerkTable).getClerkAllData();
+  }
+  
+  
+  //CREATE THE DATA TABLE
+  function createClerkTable(dataArray) {
+    if(dataArray){
+      var result = "<table class='table table-sm' style='font-size:0.8em'>"+
+                   "<thead style='white-space: nowrap'>"+
+                     "<tr>"+                               //Change table headings to match witht he Google Sheet
+                      "<th scope='col'>Delete</th>"+
+                      "<th scope='col'>Edit</th>"+
+                      "<th scope='col'>Username</th>"+
+                      //"<th scope='col'>Password</th>"+
+                    "</tr>"+
+                  "</thead>";
+      for(var i=0; i<dataArray.length; i++) {
+          result += "<tr>";
+          result += "<td><button type='button' class='btn btn-danger btn-xs deleteBtn' onclick='deleteClerkData(this);'>Delete</button></td>";
+          result += "<td><button type='button' class='btn btn-warning btn-xs editBtn' onclick='editClerkData(this);'>Edit</button></td>";
+          for(var j=0; j<dataArray[i].length; j++){
+             if(j!=1 && j!=2){ 
+               result += "<td>"+dataArray[i][j]+"</td>";
+             }
+          }
+          result += "</tr>";
+      }
+      result += "</table>";
+      var div = document.getElementById('clerkDataTable');
+      div.innerHTML = result;
+      document.getElementById("clerk_message").innerHTML = "";
+    }else{
+      var div = document.getElementById('clerkDataTable');
+      div.innerHTML = "Data not found!";
+    }
+  }
+
+  //DELETE DATA
+  function deleteClerkData(el) {
+      swal({
+        title: "Are you sure?",
+        text: "Once deleted, you will not be able to recover this record!",
+        icon: "warning",
+        buttons: true,
+        dangerMode: true,
+      })
+        .then((willDelete) => {
+        if (willDelete) {
+        swal("Record has been deleted!", {
+        icon: "success",
+
+      });
+       } else {
+        swal("Record is not deleted!");
+        }
+        if(willDelete) {
+          var clerk_uname = el.parentNode.parentNode.cells[2].innerHTML;
+          google.script.run.withSuccessHandler(createClerkTable).deleteClerkData(clerk_uname);
+        }
+  
+  });
+  
+//    var result = confirm("Want to delete?");
+//    if (result) {
+//      var clerk_uname = el.parentNode.parentNode.cells[2].innerHTML;
+//      google.script.run.withSuccessHandler(createClerkTable).deleteClerkData(clerk_uname);
+//    }
+  }
+  
+  //EDIT DATA
+  function editClerkData(el){
+    var clerk_uname = el.parentNode.parentNode.cells[2].innerHTML; //https://stackoverflow.com/a/32377357/2391195
+    google.script.run.withSuccessHandler(populateClerkForm).getClerkRecordById(clerk_uname);
+  }
+
+  //POPULATE FORM
+  function populateClerkForm(records){
+    document.getElementById('clerk_uname').value = records[0][0];
+    document.getElementById('clerk_pw').value = records[0][1];  
+    document.getElementById("clerk_message").innerHTML = "<div class='alert alert-warning' role='alert'>Update Record [CLERK: "+records[0][0]+"]</div>";
+  }
+
+//----------------------------------------------------------
+//---------Admin Part---------------------------------------
+
+//  // Prevent forms from submitting.
+//  function preventAdminFormSubmit() {
+//    var forms = document.querySelectorAll('form');
+//    for (var i = 0; i < forms.length; i++) {
+//      forms[i].addEventListener('submit', function(event) {
+//      event.preventDefault();
+//      });
+//    }
+//  }
+//  window.addEventListener("load", adminfunctionInit, true); 
+//  
+//  //INITIALIZE FUNCTIONS ONLOAD
+//  function adminfunctionInit(){  
+//    preventAdminFormSubmit();
+//    getAdminLastTenRows();
+//  };      
+//  
+//  //HANDLE FORM SUBMISSION
+//  function handleAdminFormSubmit(formObject) {
+//    google.script.run.withSuccessHandler(createAdminTable).processAdminForm(formObject);
+//    document.getElementById("adminForm").reset();
+//  }
+//  
+//  //GET LAST 10 ROWS
+//  function getAdminLastTenRows (){
+//   google.script.run.withSuccessHandler(createAdminTable).getAdminLastTenRows();
+//  }
+//  
+//  
+//  //GET ALL DATA
+//  function getAdminAllData(){
+//    //document.getElementById('adminDataTable').innerHTML = "";
+//    google.script.run.withSuccessHandler(createAdminTable).getAdminAllData();
+//  }
+//  
+//  
+//  //CREATE THE DATA TABLE
+//  function createAdminTable(dataArray) {
+//    if(dataArray){
+//      var result = "<table class='table table-sm' style='font-size:0.8em'>"+
+//                   "<thead style='white-space: nowrap'>"+
+//                     "<tr>"+                               //Change table headings to match witht he Google Sheet
+//                      "<th scope='col'>Delete</th>"+
+//                      "<th scope='col'>Edit</th>"+
+//                      "<th scope='col'>Username</th>"+
+//                      "<th scope='col'>Password</th>"+
+//                    "</tr>"+
+//                  "</thead>";
+//      for(var i=0; i<dataArray.length; i++) {
+//          result += "<tr>";
+//          result += "<td><button type='button' class='btn btn-danger btn-xs deleteBtn' onclick='deleteAdminData(this);'>Delete</button></td>";
+//          result += "<td><button type='button' class='btn btn-warning btn-xs editBtn' onclick='editAdminData(this);'>Edit</button></td>";
+//          for(var j=0; j<dataArray[i].length; j++){
+//              result += "<td>"+dataArray[i][j]+"</td>";
+//          }
+//          result += "</tr>";
+//      }
+//      result += "</table>";
+//      var div = document.getElementById('adminDataTable');
+//      div.innerHTML = result;
+//      document.getElementById("admin_message").innerHTML = "";
+//    }else{
+//      var div = document.getElementById('adminDataTable');
+//      div.innerHTML = "Data not found!";
+//    }
+//  }
+//
+//  //DELETE DATA
+//  function deleteAdminData(el) {
+//    var result = confirm("Want to delete?");
+//    if (result) {
+//      var admin_uname = el.parentNode.parentNode.cells[2].innerHTML;
+//      google.script.run.withSuccessHandler(createAdminTable).deleteAdminData(admin_uname);
+//    }
+//  }
+//  
+//  //EDIT DATA
+//  function editAdminData(el){
+//    var admin_uname = el.parentNode.parentNode.cells[2].innerHTML; //https://stackoverflow.com/a/32377357/2391195
+//    google.script.run.withSuccessHandler(populateAdminForm).getAdminRecordById(admin_uname);
+//  }
+//
+//  //POPULATE FORM
+//  function populateAdminForm(records){
+//    document.getElementById('admin_uname').value = records[0][0];
+//    document.getElementById('admin_pw').value = records[0][1];  
+//    document.getElementById("admin_message").innerHTML = "<div class='alert alert-warning' role='alert'>Update Record [ADMIN: "+records[0][0]+"]</div>";
+//  }
+  
+//-----------------------------------------------------------------------
+//----------------Resident Part------------------------------------------
+ 
+  // Prevent forms from submitting.
+  function preventFormSubmit() {
+    var forms = document.querySelectorAll('form');
+    for (var i = 0; i < forms.length; i++) {
+      forms[i].addEventListener('submit', function(event) {
+      event.preventDefault();
+      });
+    }
+  }
+  window.addEventListener("load", functionInit, true); 
+  
+  //INITIALIZE FUNCTIONS ONLOAD
+  function functionInit(){  
+    preventFormSubmit();
+    getLastTenRows();
+  };      
+  
+  //HANDLE FORM SUBMISSION
+  function handleFormSubmit(formObject) {
+    google.script.run.withSuccessHandler(createTable).processForm(formObject);
+    document.getElementById("myForm").reset();
+  }
+  
+  //GET LAST 10 ROWS
+  function getLastTenRows (){
+   google.script.run.withSuccessHandler(createTable).getLastTenRows();
+  }
+  
+  
+  //GET ALL DATA
+  function getAllData(){
+    //document.getElementById('dataTable').innerHTML = "";
+    google.script.run.withSuccessHandler(createTable).getAllData();
+  }
+  
+  
+  //CREATE THE DATA TABLE
+  function createTable(dataArray) {
+    if(dataArray){
+      var result = "<table class='table table-sm' style='font-size:0.8em'>"+
+                   "<thead style='white-space: nowrap'>"+
+                     "<tr>"+                               
+                      "<th scope='col'>Delete</th>"+
+                      "<th scope='col'>Edit</th>"+
+                      "<th scope='col'>Username</th>"+
+                      "<th scope='col'>House No.</th>"+
+                      "<th scope='col'>Street</th>"+
+                      "<th scope='col'>First Name</th>"+
+                      "<th scope='col'>Last Name</th>"+
+                      //"<th scope='col'>No of Paid</th>"+
+                      //"<th scope='col'>Password</th>"+
+                      "<th scope='col'>Phone</th>"+
+                    "</tr>"+
+                  "</thead>";
+      for(var i=0; i<dataArray.length; i++) {
+          result += "<tr>";
+          result += "<td><button type='button' class='btn btn-danger btn-xs deleteBtn' onclick='deleteData(this);'>Delete</button></td>";
+          result += "<td><button type='button' class='btn btn-warning btn-xs editBtn' onclick='editData(this);'>Edit</button></td>";
+          for(var j=0; j<dataArray[i].length; j++){
+              if(j!=6 && j!=5){                                  //not showing password & no of paid in datatable
+              result += "<td>"+dataArray[i][j]+"</td>";
+              }
+          }
+          result += "</tr>";
+      }
+      result += "</table>";
+      var div = document.getElementById('dataTable');
+      div.innerHTML = result;
+      document.getElementById("message").innerHTML = "";
+    }else{
+      var div = document.getElementById('dataTable');
+      div.innerHTML = "Data not found!";
+    }
+  }
+
+  //DELETE DATA
+  function deleteData(el) {
+//     var result = confirm("Want to reset password?");
+//     if (result) {
+//        var username = el.parentNode.parentNode.cells[2].innerHTML;
+//        google.script.run.withSuccessHandler(createTable).deleteData(username);
+//      }
+//     else{
+//      alert("Failed to change password");
+//    }
+      swal({
+        title: "Are you sure?",
+        text: "Once deleted, you will not be able to recover this record!",
+        icon: "warning",
+        buttons: true,
+        dangerMode: true,
+      })
+        .then((willDelete) => {
+        if (willDelete) {
+        swal("Record has been deleted!", {
+        icon: "success",
+
+      });
+       } else {
+        swal("Record is not deleted!");
+        }
+        if(willDelete) {
+          var username = el.parentNode.parentNode.cells[2].innerHTML;
+          google.script.run.withSuccessHandler(createTable).deleteData(username);
+        }
+  
+});
+     
+    
+  }
+ 
+  //EDIT DATA
+  function editData(el){
+    var username = el.parentNode.parentNode.cells[2].innerHTML; //https://stackoverflow.com/a/32377357/2391195
+    google.script.run.withSuccessHandler(populateForm).getRecordById(username);
+  }
+
+  //RESET RESIDENT PASSWORD
+  function admin_resetResPw(){
+    var username = document.getElementById("username").value;
+    var password = document.getElementById('password').value;
+    //var result = confirm("Want to reset password?");
+    
+    password = username;
+    google.script.run.withSuccessHandler().admin_resetResPw(username, password);
+    
+    document.getElementById("resetResPwSuccess").style.display = "block";
+//    if (result) {
+//        password = username;
+//        google.script.run.withSuccessHandler(() => alert('Password reset')).admin_resetResPw(username, password);
+//      }
+//    else{
+//      alert("Failed to change password");
+//    }
+  }
+  
+  //RESET CLERK PASSWORD
+  function admin_resetClerkPw(){
+    var clerk_uname = document.getElementById("clerk_uname").value;
+    var clerk_pw = document.getElementById('clerk_pw').value;
+    
+    clerk_pw = clerk_uname;
+    google.script.run.withSuccessHandler().admin_resetClerkPw(clerk_uname, clerk_pw);
+
+    document.getElementById("resetClerkPwSuccess").style.display = "block";
+//    var result = confirm("Want to reset password?");
+//    if (result) {
+//        clerk_pw = clerk_uname;
+//        google.script.run.withSuccessHandler(() => alert('Password reset')).admin_resetClerkPw(clerk_uname, clerk_pw);
+//      }
+//    else{
+//      alert("Failed to change password");
+//    }
+//    
+    
+  }
+  
+  //POPULATE FORM
+  function populateForm(records){
+    document.getElementById('username').value = records[0][0];
+    document.getElementById('housenumber').value = records[0][1];
+    document.getElementById('street').value = records[0][2];
+    document.getElementById('firstname').value = records[0][3];
+    document.getElementById('lastname').value = records[0][4];
+    //document.getElementById('noOfPaid').value = records[0][5];
+    document.getElementById('password').value = records[0][6];
+    document.getElementById('phone').value = records[0][7];    
+    document.getElementById("message").innerHTML = "<div class='alert alert-warning' role='alert'>Update Record [ID: "+records[0][0]+"]</div>";
+  }
+  
+  //RETRIVE DATA FROM GOOGLE SHEET FOR STREET DROPDOWN
+  function createStreetDropdown() {
+      //SUBMIT YOUR DATA RANGE FOR DROPDOWN AS THE PARAMETER
+      google.script.run.withSuccessHandler(streetDropDown).getDropdownList("Configuration!A2:A");
+  }
+  
+  //POPULATE STREET DROPDOWNS
+  function streetDropDown(values) { //Ref: https://stackoverflow.com/a/53771955/2391195
+    var list = document.getElementById('street');   
+    for (var i = 0; i < values.length; i++) {
+      var option = document.createElement("option");
+      option.value = values[i];
+      option.text = values[i];
+      list.appendChild(option);
+    }
+  }
+  
+  //SEARCH DATA
+  function handleSearchForm(formObject) {
+    createTable(dataArray) = "";
+    google.script.run.withSuccessHandler(createTable).searchData(formObject);
+    document.getElementById("search-form").reset();
+  }
+  
+  
+  
+</script>
